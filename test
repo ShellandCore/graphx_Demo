@@ -1,0 +1,58 @@
+import org.apache.spark.graphx.{Edge, Graph, VertexId}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.{SparkConf, SparkContext}
+//求共同好友
+object CommendFriend {
+ 
+  def main(args: Array[String]): Unit = {
+    //创建入口
+    val conf: SparkConf = new SparkConf().setAppName("CommendFriend").setMaster("local[*]")
+    val sc: SparkContext = new SparkContext(conf)
+    //点的集合
+    //点
+    val uv: RDD[(VertexId,(String,Int))] = sc.parallelize(Seq(
+      (133, ("毕东旭", 58)),
+      (1, ("贺咪咪", 18)),
+      (2, ("范闯", 19)),
+      (9, ("贾璐燕", 24)),
+      (6, ("马彪", 23)),
+ 
+      (138, ("刘国建", 40)),
+      (16, ("李亚茹", 18)),
+      (21, ("任伟", 25)),
+      (44, ("张冲霄", 22)),
+ 
+      (158, ("郭佳瑞", 22)),
+      (5, ("申志宇", 22)),
+      (7, ("卫国强", 22))
+    ))
+    //边的集合
+    //边Edge
+    val ue: RDD[Edge[Int]] = sc.parallelize(Seq(
+      Edge(1, 133,0),
+      Edge(2, 133,0),
+      Edge(9, 133,0),
+      Edge(6, 133,0),
+ 
+      Edge(6, 138,0),
+      Edge(16, 138,0),
+      Edge(44, 138,0),
+      Edge(21, 138,0),
+ 
+      Edge(5, 158,0),
+      Edge(7, 158,0)
+    ))
+    //构建图（连通图）
+    val graph: Graph[(String, Int), Int] = Graph(uv,ue)
+    //调用连通图算法
+    graph
+      .connectedComponents()
+      .vertices
+      .join(uv)
+      .map{
+        case (uid,(minid,(name,age)))=>(minid,(uid,name,age))
+      }.groupByKey()
+      .foreach(println(_))
+    //关闭
+  }
+}
